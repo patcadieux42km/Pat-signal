@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦇 Pat Signal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
+  :root {
+    --blue:    #1a6ef5;
+    --blue-lt: #e8f0fe;
+    --blue-md: #c2d4fd;
+    --green:   #16a34a;
+    --green-lt:#dcfce7;
+    --red:     #dc2626;
+    --red-lt:  #fee2e2;
+    --orange:  #ea580c;
+    --orange-lt:#ffedd5;
+    --bg:      #f0f4ff;
+    --card:    #ffffff;
+    --text:    #1e293b;
+    --muted:   #64748b;
+    --border:  #cbd5e1;
+    --shadow:  0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  /* ─── LOGO ─── */
+  .logo {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--blue);
+    letter-spacing: -0.01em;
+    margin-bottom: 2px;
+    text-align: center;
+  }
+  .logo-sub {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  /* ─── CARTE ─── */
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+    text-align: center;
+  }
+
+  /* ─── MODE SELECT ─── */
+  #configScreen { width: 100%; max-width: 420px; }
+
+  .mode-row { display: flex; gap: 12px; }
+  .mode-btn {
+    flex: 1; padding: 1.25rem 1rem;
+    border-radius: 16px;
+    border: 2px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .mode-btn:hover { border-color: var(--blue); background: var(--blue-lt); }
+  .mode-btn .mb-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+  .mode-btn .mb-label { font-size: 15px; font-weight: 700; color: var(--text); }
+  .mode-btn .mb-desc  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .error-msg {
+    background: var(--red-lt);
+    border: 1px solid #fca5a5;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--red);
+    margin-top: 1rem;
+    display: none;
+  }
+
+  /* ─── RÉCEPTION ─── */
+  #receptionScreen {
+    width: 100%; max-width: 420px;
+    display: none; flex-direction: column; align-items: center;
+  }
+
+  .conn-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600;
+    color: var(--green);
+    background: var(--green-lt);
+    border: 1px solid #86efac;
+    padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 1.5rem;
+  }
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+  .screen-label {
+    font-size: 13px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.1em; margin-bottom: 1.75rem;
+  }
+
+  /* Bouton bat */
+  .bat-wrap { position: relative; margin-bottom: 1.75rem; }
+  .ripple {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%) scale(0.8);
+    width: 190px; height: 190px; border-radius: 50%;
+    border: 3px solid var(--blue); opacity: 0; pointer-events: none;
+  }
+  .ripple.go { animation: rippleAnim 0.7s ease-out forwards; }
+  @keyframes rippleAnim {
+    0%   { transform: translate(-50%,-50%) scale(0.8); opacity: 0.6; }
+    100% { transform: translate(-50%,-50%) scale(1.9); opacity: 0; }
+  }
+
+  .bat-btn {
+    width: 190px; height: 190px; border-radius: 50%;
+    background: var(--blue);
+    border: none;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: transform 0.13s, box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 6px 24px rgba(26,110,245,0.35);
+    user-select: none; position: relative; z-index: 1;
+  }
+  .bat-btn:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(26,110,245,0.45); }
+  .bat-btn:active { transform: scale(0.96); }
+  .bat-btn.sent { background: var(--green); box-shadow: 0 6px 24px rgba(22,163,74,0.35); }
+
+  .bat-emoji { font-size: 58px; line-height: 1; margin-bottom: 6px; pointer-events: none; }
+  .bat-label {
+    font-size: 14px; font-weight: 800;
+    color: #fff; letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+
+  /* Raisons */
+  .reasons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
+  .rb {
+    padding: 8px 16px; border-radius: 20px;
+    border: 2px solid var(--border);
+    background: #fff;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; transition: all 0.13s;
+  }
+  .rb:hover { border-color: var(--blue); color: var(--blue); }
+  .rb.active { background: var(--blue-lt); color: var(--blue); border-color: var(--blue); }
+
+  .rec-status {
+    font-size: 14px; font-weight: 600; color: var(--muted);
+    height: 22px; text-align: center; transition: color 0.2s;
+  }
+  .rec-status.ok  { color: var(--green); }
+  .rec-status.err { color: var(--red); }
+
+  /* ─── BUREAU ─── */
+  #bureauScreen {
+    width: 100%; max-width: 420px;
+    display: none; flex-direction: column; align-items: center;
+  }
+
+  .monitor {
+    width: 100%; border-radius: 20px;
+    min-height: 220px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 2rem 1.5rem;
+    transition: all 0.3s;
+    margin-bottom: 1rem;
+    background: var(--card);
+    border: 2px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+
+  .monitor.alert {
+    background: #fff8e1;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245,158,11,0.15), var(--shadow);
+    animation: alertPulse 1s ease-in-out infinite alternate;
+  }
+  @keyframes alertPulse {
+    from { box-shadow: 0 0 0 4px rgba(245,158,11,0.1); }
+    to   { box-shadow: 0 0 0 8px rgba(245,158,11,0.25); }
+  }
+
+  .idle-icon { font-size: 48px; opacity: 0.2; margin-bottom: 10px; }
+  .idle-txt { font-size: 14px; color: var(--muted); text-align: center; line-height: 1.7; font-weight: 600; }
+
+  .alert-bat { font-size: 64px; margin-bottom: 10px; animation: pop 0.4s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes pop {
+    0%  { transform: scale(0.3) rotate(-10deg); }
+    60% { transform: scale(1.15) rotate(3deg); }
+    100%{ transform: scale(1) rotate(0); }
+  }
+
+  .alert-title {
+    font-size: 12px; font-weight: 800;
+    color: #b45309; letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .alert-reason {
+    font-size: 34px; font-weight: 800;
+    color: var(--text); margin-bottom: 6px;
+  }
+  .alert-time { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 18px; }
+
+  .ack-btn {
+    padding: 14px 36px; border-radius: 30px;
+    background: var(--green); border: none;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px; font-weight: 800;
+    color: #fff; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(22,163,74,0.35);
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .ack-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .ack-btn:active { transform: scale(0.96); }
+
+  /* Barre statut */
+  .status-bar { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+  .status-dot.err { background: var(--red); animation: none; }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+
+  /* Son toggle */
+  .sound-toggle {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 0.75rem;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    cursor: pointer; user-select: none;
+  }
+  .toggle-track {
+    width: 40px; height: 22px; border-radius: 11px;
+    background: var(--border); position: relative;
+    transition: background 0.2s;
+  }
+  .toggle-track.on { background: var(--blue); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; transition: left 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  .toggle-track.on .toggle-thumb { left: 21px; }
+
+  /* Historique */
+  .hist-section { width: 100%; margin-top: 1.25rem; }
+  .hist-header {
+    font-size: 12px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+  }
+  .hist-item {
+    display: flex; justify-content: space-between;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .hist-item span:last-child { color: var(--muted); }
+
+  /* Retour */
+  .back-link {
+    margin-top: 1.25rem; font-size: 13px; font-weight: 600;
+    color: var(--muted); cursor: pointer;
+    background: none; border: none; font-family: 'Nunito', sans-serif;
+    text-decoration: underline; opacity: 0.6;
+  }
+  .back-link:hover { opacity: 1; }
+
+  /* Loading */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+    font-size: 15px; font-weight: 600; color: var(--muted);
+    z-index: 100;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading" style="display:none;">
+  <div class="spinner"></div>
+  <div>Connexion à Firebase…</div>
+</div>
+
+<!-- ═══ CONFIG ═══ -->
+<div id="configScreen">
+  <div class="logo">🦇 Pat Signal</div>
+  <div class="logo-sub">Système d'alerte bureau / réception</div>
+  <div class="card">
+    <div class="card-title">Qui es-tu?</div>
+    <div class="mode-row">
+      <button class="mode-btn" onclick="startMode('reception')">
+        <span class="mb-icon">🖥️</span>
+        <div class="mb-label">Réception</div>
+        <div class="mb-desc">Envoyer une alerte à Pat</div>
+      </button>
+      <button class="mode-btn" onclick="startMode('bureau')">
+        <span class="mb-icon">🦇</span>
+        <div class="mb-label">Bureau de Pat</div>
+        <div class="mb-desc">Recevoir les alertes</div>
+      </button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+</div>
+
+<!-- ═══ RÉCEPTION ═══ -->
+<div id="receptionScreen">
+  <div class="logo">🦇 Pat Signal</div>
+  <div class="conn-badge"><div class="conn-dot"></div>Firebase connecté</div>
+  <div class="screen-label">Réception — Appeler Pat</div>
+
+  <div class="bat-wrap">
+    <div class="ripple" id="ripple"></div>
+    <button class="bat-btn" id="batBtn" onclick="sendSignal()">
+      <div class="bat-emoji">🦇</div>
+      <div class="bat-label" id="batLabel">PAT SIGNAL</div>
+    </button>
+  </div>
+
+  <div class="reasons">
+    <button class="rb active" id="r0" onclick="selectReason(0)">👤 Visiteur</button>
+    <button class="rb" id="r1" onclick="selectReason(1)">📦 Livraison</button>
+    <button class="rb" id="r2" onclick="selectReason(2)">🚨 Appel urgent</button>
+    <button class="rb" id="r3" onclick="selectReason(3)">❓ Question</button>
+  </div>
+
+  <div class="rec-status" id="recStatus">Sélectionne une raison et appuie!</div>
+  <button class="back-link" onclick="goBack()">← Changer de mode</button>
+</div>
+
+<!-- ═══ BUREAU ═══ -->
+<div id="bureauScreen">
+  <div class="logo">🦇 Pat Signal</div>
+  <div class="conn-badge"><div class="conn-dot"></div>Surveillance active</div>
+
+  <div class="monitor" id="monitor">
+    <div class="idle-icon">🦇</div>
+    <div class="idle-txt">Aucun appel en ce moment<br>La réception t'appellera ici</div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <div id="statusTxt">Connecté — en attente…</div>
+  </div>
+
+  <div class="sound-toggle" onclick="toggleSound()">
+    <div class="toggle-track on" id="soundTrack">
+      <div class="toggle-thumb"></div>
+    </div>
+    <span id="soundLabel">🔔 Son activé</span>
+  </div>
+
+  <div class="hist-section" id="histSection" style="display:none;">
+    <div class="hist-header">Historique des appels</div>
+    <div id="histList"></div>
+  </div>
+
+  <button class="back-link" onclick="goBack()">← Changer de mode</button>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getDatabase, ref, set, onValue, off } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+  const REASONS = ["👤 Visiteur","📦 Livraison","🚨 Appel urgent","❓ Question"];
+  let selectedReason = 0;
+  let sending = false;
+  let db = null;
+  let signalRef = null;
+  let alerting = false;
+  let soundEnabled = true;
+  let lastId = null;
+  const history = [];
+  let audioCtx = null;
+
+  const $ = id => document.getElementById(id);
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBT33Gn5_RVqdJtKSFgDeqiZJxvGNBXT7c",
+    authDomain: "pat-signal.firebaseapp.com",
+    databaseURL: "https://pat-signal-default-rtdb.firebaseio.com",
+    projectId: "pat-signal"
+  };
+
+  // ── Son d'alerte via Web Audio API ──
+  function playAlert() {
+    if (!soundEnabled) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      const ctx = audioCtx;
+      const now = ctx.currentTime;
+
+      // Séquence de 3 bips montants — discrets mais bien audibles
+      const notes = [523, 659, 784]; // Do, Mi, Sol
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+
+        const t = now + i * 0.22;
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.35, t + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+
+        osc.start(t);
+        osc.stop(t + 0.32);
+      });
+
+      // Répéter 3 fois
+      let rep = 0;
+      const interval = setInterval(() => {
+        rep++;
+        if (rep >= 2 || !alerting) { clearInterval(interval); return; }
+        const t2 = ctx.currentTime;
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const t = t2 + i * 0.22;
+          gain.gain.setValueAtTime(0, t);
+          gain.gain.linearRampToValueAtTime(0.3, t + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+          osc.start(t);
+          osc.stop(t + 0.32);
+        });
+      }, 1200);
+
+    } catch(e) { console.warn('Audio:', e); }
+  }
+
+  window.toggleSound = function() {
+    soundEnabled = !soundEnabled;
+    const track = $('soundTrack');
+    const label = $('soundLabel');
+    track.classList.toggle('on', soundEnabled);
+    label.textContent = soundEnabled ? '🔔 Son activé' : '🔕 Son désactivé';
+  };
+
+  // ── DÉMARRAGE ──
+  window.startMode = function(mode) {
+    $('loading').style.display = 'flex';
+    $('configScreen').style.display = 'none';
+
+    try {
+      const app = initializeApp(FIREBASE_CONFIG);
+      db = getDatabase(app);
+      signalRef = ref(db, 'pat_signal/latest');
+      $('loading').style.display = 'none';
+
+      if (mode === 'reception') {
+        $('receptionScreen').style.display = 'flex';
+      } else {
+        $('bureauScreen').style.display = 'flex';
+        startListening();
+      }
+    } catch(e) {
+      $('loading').style.display = 'none';
+      $('configScreen').style.display = 'block';
+      const err = $('errorMsg');
+      err.textContent = 'Erreur Firebase: ' + e.message;
+      err.style.display = 'block';
+    }
+  };
+
+  window.goBack = function() {
+    if (signalRef) off(signalRef);
+    alerting = false;
+    $('receptionScreen').style.display = 'none';
+    $('bureauScreen').style.display = 'none';
+    $('configScreen').style.display = 'block';
+  };
+
+  // ── RÉCEPTION ──
+  window.selectReason = function(i) {
+    selectedReason = i;
+    REASONS.forEach((_, idx) => $('r' + idx).classList.toggle('active', idx === i));
+  };
+
+  window.sendSignal = async function() {
+    if (sending || !db) return;
+    sending = true;
+    const status = $('recStatus');
+    const label  = $('batLabel');
+    const btn    = $('batBtn');
+    const ripple = $('ripple');
+
+    status.textContent = 'Envoi…';
+    status.className = 'rec-status';
+    ripple.classList.remove('go');
+    void ripple.offsetWidth;
+    ripple.classList.add('go');
+
+    try {
+      await set(signalRef, {
+        id: Date.now(),
+        reason: REASONS[selectedReason],
+        time: new Date().toISOString(),
+        acked: false
+      });
+
+      btn.classList.add('sent');
+      label.textContent = 'ENVOYÉ! ✓';
+      status.textContent = '✓ Pat a été alerté — ' + REASONS[selectedReason];
+      status.className = 'rec-status ok';
+
+      setTimeout(() => {
+        btn.classList.remove('sent');
+        label.textContent = 'PAT SIGNAL';
+        status.textContent = 'Prêt pour le prochain appel';
+        status.className = 'rec-status';
+        sending = false;
+      }, 3500);
+
+    } catch(e) {
+      status.textContent = 'Erreur: ' + e.message;
+      status.className = 'rec-status err';
+      sending = false;
+    }
+  };
+
+  // ── BUREAU ──
+  function startListening() {
+    onValue(signalRef, snapshot => {
+      const signal = snapshot.val();
+      if (!signal) return;
+      if (signal.id !== lastId && !signal.acked) {
+        lastId = signal.id;
+        if (!alerting) {
+          showAlert(signal);
+          playAlert();
+        }
+      }
+    }, err => {
+      $('statusDot').classList.add('err');
+      $('statusTxt').textContent = 'Erreur: ' + err.message;
+    });
+  }
+
+  function showAlert(signal) {
+    alerting = true;
+    const monitor = $('monitor');
+    monitor.className = 'monitor alert';
+
+    // Nettoyer l'emoji des raisons pour l'affichage
+    const reasonText = signal.reason || 'Appel';
+
+    monitor.innerHTML = `
+      <div class="alert-bat">🦇</div>
+      <div class="alert-title">🔔 Pat Signal!</div>
+      <div class="alert-reason">${reasonText}</div>
+      <div class="alert-time">Reçu à ${formatTime(signal.time)}</div>
+      <button class="ack-btn" onclick="window.acknowledge()">✓ J'arrive!</button>
+    `;
+
+    history.unshift({ reason: reasonText, time: formatTime(signal.time) });
+    if (history.length > 8) history.pop();
+  }
+
+  window.acknowledge = async function() {
+    alerting = false;
+    const monitor = $('monitor');
+    monitor.className = 'monitor';
+    monitor.innerHTML = `
+      <div class="idle-icon">🦇</div>
+      <div class="idle-txt">Signal acquitté ✓<br>En attente du prochain appel</div>
+    `;
+
+    try { await set(signalRef, { id: lastId, acked: true, time: new Date().toISOString() }); } catch(_) {}
+
+    $('histSection').style.display = 'block';
+    $('histList').innerHTML = history.map(h =>
+      `<div class="hist-item"><span>${h.reason}</span><span>${h.time}</span></div>`
+    ).join('');
+  };
+
+  function formatTime(iso) {
+    return new Date(iso).toLocaleTimeString('fr-CA', { hour: '2-digit', minute: '2-digit' });
+  }
+</script>
+</body>
+</html>
