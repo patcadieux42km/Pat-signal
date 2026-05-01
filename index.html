@@ -539,16 +539,30 @@
     ripple.classList.add('go');
 
     try {
+      const reason = REASONS[selectedReason];
+
+      // Envoi Firebase
       await set(signalRef, {
         id: Date.now(),
-        reason: REASONS[selectedReason],
+        reason: reason,
         time: new Date().toISOString(),
         acked: false
       });
 
+      // Envoi notification ntfy sur téléphone de Pat
+      fetch('https://ntfy.sh/pat-signal-patcadieux', {
+        method: 'POST',
+        headers: {
+          'Title': '🦇 Pat Signal!',
+          'Priority': 'high',
+          'Tags': 'bat,bell'
+        },
+        body: reason
+      }).catch(() => {}); // silencieux si échec
+
       btn.classList.add('sent');
       label.textContent = 'ENVOYÉ! ✓';
-      status.textContent = '✓ Pat a été alerté — ' + REASONS[selectedReason];
+      status.textContent = '✓ Pat a été alerté — ' + reason;
       status.className = 'rec-status ok';
 
       setTimeout(() => {
